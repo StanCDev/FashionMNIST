@@ -46,7 +46,7 @@ class MLP(nn.Module):
         """
         preds = x
         for fc in self.fc:
-            preds = F.relu(fc(preds)) #not sure about the shape
+            preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
         return preds
 
 

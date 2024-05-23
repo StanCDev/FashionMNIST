@@ -7,6 +7,7 @@ from src.data import load_data
 from src.methods.pca import PCA
 from src.methods.deep_network import MLP, CNN, Trainer, MyViT
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, get_n_classes
+np.random.seed(100)
 
 
 def main(args):
@@ -28,7 +29,28 @@ def main(args):
 
     # Make a validation set
     if not args.test:
-    ### WRITE YOUR CODE HERE
+        N = xtrain.shape[0]
+        all_ind = np.arange(N)
+        split_ratio = 0.8
+        split_size = int(split_ratio * N)
+
+        ################### RANDOM SHUFFLING ################
+        all_ind = np.random.permutation(all_ind)
+        #####################################################
+
+        ########### TRAINING AND VALIDATION INDICES #########
+        val_ind = all_ind[: split_size]
+        train_ind = np.setdiff1d(all_ind, val_ind, assume_unique=True)
+        #####################################################
+
+        xtrain_original = xtrain
+        ytrain_original = ytrain
+
+        xtrain = xtrain_original[train_ind]
+        xtest = xtrain_original[val_ind]
+
+        ytest = ytrain_original[val_ind]
+        ytrain = ytrain_original[train_ind]
         print("Using PCA")
 
     ### WRITE YOUR CODE HERE to do any other data processing
