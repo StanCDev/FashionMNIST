@@ -166,7 +166,6 @@ class Trainer(object):
         epochs = range(self.epochs)
         for ep in epochs:
             self.train_one_epoch(dataloader,ep, len(epochs))
-
             ### WRITE YOUR CODE HERE if you want to do add something else at each epoch
 
     def train_one_epoch(self, dataloader, ep, epochs):

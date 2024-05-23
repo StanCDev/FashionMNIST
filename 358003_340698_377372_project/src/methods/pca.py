@@ -38,11 +38,31 @@ class PCA(object):
         Returns:
             exvar (float): explained variance of the kept dimensions (in percentage, i.e., in [0,100])
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        X = training_data
+        d = self.d
+        # Compute the mean of data
+        mean = np.mean(X,axis=0)
+        self.mean = mean
+        # Center the data with the mean
+        X_tilde = X - mean
+        # Create the covariance matrix
+        C = X_tilde.T @ X_tilde
+        # Compute the eigenvectors and eigenvalues. Hint: look into np.linalg.eigh()
+        eigvals, eigvecs = np.linalg.eigh(C)
+        # Choose the top d eigenvalues and corresponding eigenvectors. 
+        index = np.argsort(-eigvals)
+        eigvals = eigvals[index]
+        eigvecs = eigvecs[:,index]
+
+        W = eigvecs[:, :d]
+        self.W = W
+        eg = eigvals[:d]
+
+        # project the data using W
+        # Y = X_tilde @ W
+        
+        # Compute the explained variance
+        exvar = 100 * np.sum(eg) / np.sum(eigvals)
         return exvar
 
     def reduce_dimension(self, data):
@@ -54,11 +74,8 @@ class PCA(object):
         Returns:
             data_reduced (array): reduced data of shape (N,d)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        # project the data using W
+        data_reduced = (data - self.mean) @ self.W
         return data_reduced
         
 
