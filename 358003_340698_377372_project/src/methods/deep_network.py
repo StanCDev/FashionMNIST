@@ -5,7 +5,7 @@ import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 
 ## MS2
-import utils
+from .. import utils
 
 class MLP(nn.Module):
     """
@@ -30,12 +30,11 @@ class MLP(nn.Module):
         assert len(layers) != 0 , "MLP has no hidden layers!"
         super(MLP, self).__init__()
 
-        self.fc = []
+        fc = []
         layers = [input_size] + layers + [n_classes]
         for i in range(len(layers) - 1):
-            self.fc.append(nn.Linear(layers[i], layers[i+1]))
-
-    
+            fc.append(nn.Linear(layers[i], layers[i+1]))
+        self.network = nn.Sequential(*fc)
 
     def forward(self, x):
         """
@@ -48,8 +47,11 @@ class MLP(nn.Module):
                 Reminder: logits are value pre-softmax.
         """
         preds = x
-        for fc in self.fc:
-            preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
+        for i, fc in enumerate(self.network):
+            if i == len(self.network)-1:
+                preds = fc(preds)
+            else:
+                preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
         return preds
 
 
@@ -60,7 +62,7 @@ class CNN(nn.Module):
     It should use at least one convolutional layer.
     """
 
-    def __init__(self, input_channels, n_classes):
+    def __init__(self, input_channels, n_classes, D, conv_layers=[(6, 3, 1),(16, 3, 1)], fc_layers=[120, 84]):
         """
         Initialize the network.
         
@@ -70,13 +72,45 @@ class CNN(nn.Module):
         Arguments:
             input_channels (int): number of channels in the input
             n_classes (int): number of classes to predict
+            D (int): width / height of square image
+            conv_layers (list[(int,int,int)]): list of triples (out_channels, kernel_size, and padding) for every 
+                convolutional layer. For every conv. there is one max pooling
+            fc_layers (list[int]): list of neurons for every hidden layer
         """
-        super().__init__()
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        super(CNN, self).__init__()
+
+        ### ADD AN ASSERT WITH THE CONDITIONS
+        nbr_pools : int = len(conv_layers)
+        assert D % (2 ** nbr_pools) == 0 , "For every convolutional layer we divide the size of the image by two. \
+            hence must be width/height of image must be dividible by 2 number of convolutional layer times"
+
+        self.conv_layers = nn.ModuleList()
+
+        in_channels : int = input_channels
+        
+
+        for out_channels, kernel_size, padding in conv_layers:
+            self.conv_layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, padding=padding))
+            in_channels = out_channels
+        # self.conv2d1 = nn.Conv2d(in_channels = input_channels, out_channels = 6,kernel_size = 3, padding = 1)
+        # self.conv2d2 = nn.Conv2d(in_channels = 6, out_channels = 16, kernel_size = 3, padding = 1)
+
+        self.fc_layers = nn.ModuleList()
+
+        ### note that output dimension is nbr of out put channels / 2 ** nbr_pools
+        input_size = int( D * D * in_channels / 2 ** (2 * nbr_pools) )
+
+
+        self.fc_layers = nn.ModuleList()
+        layers = [input_size] + fc_layers + [n_classes]
+        for i in range(len(layers) - 1):
+            print(f"And the two layers are : {layers[i]} {layers[i+1]}")
+            self.fc_layers.append(nn.Linear(layers[i], layers[i+1]))
+        #self.network = nn.Sequential(*fc)
+
+        # self.fc1 = nn.Linear(784,120)
+        # self.fc2 = nn.Linear(120,84)
+        # self.fc3 = nn.Linear(84,n_classes)
 
     def forward(self, x):
         """
@@ -88,11 +122,18 @@ class CNN(nn.Module):
             preds (tensor): logits of predictions of shape (N, C)
                 Reminder: logits are value pre-softmax.
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        for conv_layer in self.conv_layers:
+            x = F.relu(conv_layer(x))
+            x = F.max_pool2d(input=x, kernel_size=2)
+
+
+        x = x.flatten(-3)
+        preds = x
+        for i, fc in enumerate(self.fc_layers):
+            if i == len(self.fc_layers)-1:
+                preds = fc(preds)
+            else:
+                preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
         return preds
 
 
@@ -291,10 +332,11 @@ class Trainer(object):
         Arguments:
             dataloader (DataLoader): dataloader for training data
         """
+        self.model.train()
         for it, batch in enumerate(dataloader):
             # 5.1 Load a batch, break it down in images and targets.
             x, y = batch
-
+            y = y.long()
             # 5.2 Run forward pass.
             logits = self.model.forward(x)  ### WRITE YOUR CODE HERE
             
@@ -332,13 +374,13 @@ class Trainer(object):
                 with N the number of data points in the validation/test data.
         """
         self.model.eval()
-        N = len(dataloader)
-        pred_labels = torch.zeros(N)
+        pred_labels = []
         with torch.no_grad():
             for it, x in enumerate(dataloader):
+                x = x[0]
                 y = self.model(x)
-                pred_labels[it] = y
-        return pred_labels
+                pred_labels.append(torch.argmax(y, dim=1)) # or just y
+        return torch.cat(pred_labels)
     
     def fit(self, training_data, training_labels):
         """

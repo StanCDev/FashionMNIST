@@ -20,18 +20,20 @@ def main(args):
                           of this file). Their value can be accessed as "args.argument".
     """
     ## 1. First, we load our data and flatten the images into vectors
-    xtrain, xtest, ytrain = load_data(args.data_path)
+    xtrain, xtest, ytrain = load_data(args.data)
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
     xtest = xtest.reshape(xtest.shape[0], -1)
 
     ## 2. Then we must prepare it. This is were you can create a validation set,
     #  normalize, add bias, etc.
+    xtrain = normalize_fn(xtrain, np.mean(xtrain), np.std(xtrain))
+    xtest = normalize_fn(xtest,np.mean(xtest), np.std(xtest))
 
     # Make a validation set
     if not args.test:
         N = xtrain.shape[0]
         all_ind = np.arange(N)
-        split_ratio = 0.8
+        split_ratio = 0.2
         split_size = int(split_ratio * N)
 
         ################### RANDOM SHUFFLING ################
@@ -51,9 +53,25 @@ def main(args):
 
         ytest = ytrain_original[val_ind]
         ytrain = ytrain_original[train_ind]
-        print("Using PCA")
 
     ### WRITE YOUR CODE HERE to do any other data processing
+    ### Here we transform matrices back to vectors in the cases of CNN and transformer
+    if args.nn_type == "cnn":
+        ##print(f"Shape of xtrain before {xtrain.shape}")
+        N , D = xtrain.shape
+        sqrtD = int(np.sqrt(D))
+        if sqrtD * sqrtD != D:
+            raise ValueError("Images are not square")
+        xtrain = xtrain.reshape(N,1,sqrtD,sqrtD)
+        ##print(f"Shape of xtrain after {xtrain.shape}")
+
+        N2 , D2 = xtest.shape
+        sqrtD2 = int(np.sqrt(D2))
+        if sqrtD2 * sqrtD2 != D2:
+            raise ValueError("Images are not square")
+        xtest = xtest.reshape(N2,1,sqrtD2,sqrtD2)
+    elif args.nn_type == "transformer":
+        ...
 
 
     # Dimensionality reduction (MS2)
@@ -67,6 +85,7 @@ def main(args):
 
 
     ## 3. Initialize the method you want to use.
+    model = None
 
     # Neural Networks (MS2)
 
@@ -74,7 +93,17 @@ def main(args):
     # Note: you might need to reshape the data depending on the network you use!
     n_classes = get_n_classes(ytrain)
     if args.nn_type == "mlp":
-        model = ... ### WRITE YOUR CODE HERE
+        hidden_layers : list[int] = [256,128,64]
+        print(f"Shape of xtrain {xtrain.shape}")
+        input_size = xtrain.shape[1]
+        model = MLP(input_size, n_classes, hidden_layers) ### WRITE YOUR CODE HERE
+    elif args.nn_type == "cnn":
+        N , Ch, D, D = xtrain.shape
+        model = CNN(Ch, n_classes, D) ##change 1
+    elif args.nn_type == "transformer":
+        model = MyViT(None,None,None,None,None,None)
+    else:
+        raise ValueError("Inputted model is not a good model")
 
     summary(model)
 
@@ -98,8 +127,9 @@ def main(args):
 
     ## As there are no test dataset labels, check your model accuracy on validation dataset.
     # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
-    acc = accuracy_fn(preds, xtest)
-    macrof1 = macrof1_fn(preds, xtest)
+    print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
+    acc = accuracy_fn(preds, ytest)
+    macrof1 = macrof1_fn(preds, ytest)
     print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
 
