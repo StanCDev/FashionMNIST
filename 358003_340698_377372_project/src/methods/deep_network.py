@@ -331,11 +331,14 @@ class Trainer(object):
             pred_labels (torch.tensor): predicted labels of shape (N,),
                 with N the number of data points in the validation/test data.
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        self.model.eval()
+        N = len(dataloader)
+        pred_labels = torch.zeros(N)
+        with torch.no_grad():
+            acc_run = 0
+            for it, x in enumerate(dataloader):
+                y = self.model(x)
+                pred_labels[it] = y
         return pred_labels
     
     def fit(self, training_data, training_labels):
