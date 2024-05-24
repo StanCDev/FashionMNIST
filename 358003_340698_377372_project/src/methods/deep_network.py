@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 
 ## MS2
@@ -33,6 +34,8 @@ class MLP(nn.Module):
         layers = [input_size] + layers + [n_classes]
         for i in range(len(layers) - 1):
             self.fc.append(nn.Linear(layers[i], layers[i+1]))
+
+    
 
     def forward(self, x):
         """
@@ -93,6 +96,45 @@ class CNN(nn.Module):
         return preds
 
 
+
+class MyMSA(nn.Module):
+    def __init__(self, d, n_heads=2):
+        super(MyMSA, self).__init__()
+        self.d = d
+        self.n_heads = n_heads
+
+        assert d % n_heads == 0, f"Can't divide dimension {d} into {n_heads} heads"
+
+        d_head = int(d / n_heads)
+        self.q_mappings = nn.ModuleList([nn.Linear(d_head, d_head) for _ in range(self.n_heads)])
+        self.k_mappings = nn.ModuleList([nn.Linear(d_head, d_head) for _ in range(self.n_heads)])
+        self.v_mappings = nn.ModuleList([nn.Linear(d_head, d_head) for _ in range(self.n_heads)])
+        self.d_head = d_head
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, sequences):
+        # Sequences has shape (N, seq_length, token_dim)
+        # We go into shape    (N, seq_length, n_heads, token_dim / n_heads)
+        # And come back to    (N, seq_length, item_dim)  (through concatenation)
+        result = []
+        for sequence in sequences:
+            seq_result = []
+            for head in range(self.n_heads):
+                q_mapping = self.q_mappings[head]
+                k_mapping = self.k_mappings[head]
+                v_mapping = self.v_mappings[head]
+
+                seq = sequence[:, head * self.d_head: (head + 1) * self.d_head]
+                q, k, v = q_mapping(seq), k_mapping(seq), v_mapping(seq)
+
+                attention = self.softmax(q @ k.T / (self.d_head ** 0.5))
+                seq_result.append(attention @ v)
+            result.append(torch.hstack(seq_result))
+        return torch.cat([torch.unsqueeze(r, dim=0) for r in result])
+
+
+
+
 class MyViT(nn.Module):
     """
     A Transformer-based neural network
@@ -104,28 +146,74 @@ class MyViT(nn.Module):
         
         """
         super().__init__()
+
+        self.chw = chw 
+        self.n_patches = n_patches
+        self.hidden_d = hidden_d
+        
+
+        assert chw[1] % n_patches == 0, "Number of patches do not divide the image evenly"
+        assert chw[2] % n_patches == 0, "Number of patches do not divide the image evenly"
+
+        self.patch_size = (chw[1] / n_patches, chw[2] / n_patches)
+        
+        self.input_d = int(chw[0] * self.patch_size[0] * self.patch_size[1])
+        self.linear_mapper = nn.Linear(self.input_d, self.hidden_d)
+
+        self.class_token = nn.Parameter(torch.rand(1, self.hidden_d))
+
+        self.pos_embed = nn.Parameter(torch.tensor(self.get_positional_embeddings(self.n_patches ** 2 + 1, self.hidden_d)))
+        self.pos_embed.requires_grad = False
+
+
         ##
         ###
         #### WRITE YOUR CODE HERE!
         ###
         ##
+        
+    def patchify(images, n_patches):
+        n, c, h, w = images.shape
 
+        assert h == w, "Assert image is square"
+
+        patches = torch.zeros(n, n_patches ** 2, h * w * c // n_patches ** 2)
+        patch_size = h // n_patches
+
+        for idx, image in enumerate(images):
+            for i in range(n_patches):
+                for j in range(n_patches):
+                    patch = image[:, i * patch_size: (i + 1) * patch_size, j * patch_size: (j + 1) * patch_size]
+                    patches[idx, i * n_patches + j] = patch.flatten()
+        return patches
+
+    def get_positional_embeddings(sequence_length, d):
+        result = torch.ones(sequence_length, d)
+        for i in range(sequence_length):
+            for j in range(d):
+                result[i][j] = np.sin(i / (10000 ** (j / d))) if j % 2 == 0 else np.cos(i / (10000 ** ((j - 1) / d)))
+        return result
+    
     def forward(self, x):
         """
         Predict the class of a batch of samples with the model.
 
         Arguments:
-            x (tensor): input batch of shape (N, Ch, H, W)
+            x (tensor): input batch of shape (N, Ch, H, W), N is the number of images, Ch the number of channels and H and W height and width
         Returns:
             preds (tensor): logits of predictions of shape (N, C)
                 Reminder: logits are value pre-softmax.
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
-        return preds
+        patches = self.patchify(x, self.n_patches)
+        tokens = self.linear_mapper(patches)
+        tokens = torch.stack([torch.vstack((self.class_token, tokens[i])) for i in range(len(tokens))])
+
+        pos_embed = self.pos_embed.repeat(x.shape[0], 1, 1) #IDK IM NOT SURE ABOUT THIS, instead of x0 say n
+        out = tokens + pos_embed
+        nn.M
+        return out
+        
+        
 
 
 class Trainer(object):
