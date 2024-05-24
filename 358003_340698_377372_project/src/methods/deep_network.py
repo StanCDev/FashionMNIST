@@ -310,7 +310,6 @@ class Trainer(object):
         N = len(dataloader)
         pred_labels = torch.zeros(N)
         with torch.no_grad():
-            acc_run = 0
             for it, x in enumerate(dataloader):
                 y = self.model(x)
                 pred_labels[it] = y
