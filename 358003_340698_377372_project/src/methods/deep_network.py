@@ -307,16 +307,13 @@ class Trainer(object):
                 with N the number of data points in the validation/test data.
         """
         self.model.eval()
+        N = len(dataloader)
+        pred_labels = torch.zeros(N)
         with torch.no_grad():
             acc_run = 0
-            for it, batch in enumerate(dataloader):
-                # Get batch of data.
-                x, y = batch
-                curr_bs = x.shape[0]
-                acc_run += utils.accuracy(self.model(x), y) * curr_bs
-            acc = acc_run / len(dataloader.dataset)
-
-            print(', accuracy test: {:.2f}'.format(acc))
+            for it, x in enumerate(dataloader):
+                y = self.model(x)
+                pred_labels[it] = y
         return pred_labels
     
     def fit(self, training_data, training_labels):
