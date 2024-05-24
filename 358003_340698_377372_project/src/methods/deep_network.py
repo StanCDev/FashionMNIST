@@ -306,11 +306,17 @@ class Trainer(object):
             pred_labels (torch.tensor): predicted labels of shape (N,),
                 with N the number of data points in the validation/test data.
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        self.model.eval()
+        with torch.no_grad():
+            acc_run = 0
+            for it, batch in enumerate(dataloader):
+                # Get batch of data.
+                x, y = batch
+                curr_bs = x.shape[0]
+                acc_run += utils.accuracy(self.model(x), y) * curr_bs
+            acc = acc_run / len(dataloader.dataset)
+
+            print(', accuracy test: {:.2f}'.format(acc))
         return pred_labels
     
     def fit(self, training_data, training_labels):
