@@ -70,6 +70,7 @@ def main(args):
         if sqrtD2 * sqrtD2 != D2:
             raise ValueError("Images are not square")
         xtest = xtest.reshape(N2,1,sqrtD2,sqrtD2)
+    
     elif args.nn_type == "transformer":
         ...
 
