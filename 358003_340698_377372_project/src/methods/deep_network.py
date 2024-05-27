@@ -219,7 +219,7 @@ class MyViT(nn.Module):
         self.class_token = nn.Parameter(torch.rand(1, self.hidden_d))
         
         # 3) Positional embedding
-        self.register_buffer('positional_embeddings', utils.get_positional_embeddings(n_patches ** 2 + 1, hidden_d), persistent=False)
+        self.positional_embeddings = utils.get_positional_embeddings(n_patches ** 2 + 1, hidden_d)
         
         # 4) Transformer encoder blocks
         self.blocks = nn.ModuleList([MyViTBlock(hidden_d, n_heads) for _ in range(n_blocks)])
@@ -251,7 +251,7 @@ class MyViT(nn.Module):
         """
         # Dividing images into patches
         n, c, h, w = x.shape
-        patches = utils.patchify(x, self.n_patches).to(self.positional_embeddings.device)
+        patches = utils.patchify(x, self.n_patches)
         
         # Running linear layer tokenization
         # Map the vector corresponding to each patch to the hidden size dimension

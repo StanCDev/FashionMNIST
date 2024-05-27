@@ -56,7 +56,7 @@ def main(args):
 
     ### WRITE YOUR CODE HERE to do any other data processing
     ### Here we transform matrices back to vectors in the cases of CNN and transformer
-    if args.nn_type == "cnn":
+    if args.nn_type == "cnn" or args.nn_type == "transformer":
         ##print(f"Shape of xtrain before {xtrain.shape}")
         N , D = xtrain.shape
         sqrtD = int(np.sqrt(D))
@@ -70,9 +70,6 @@ def main(args):
         if sqrtD2 * sqrtD2 != D2:
             raise ValueError("Images are not square")
         xtest = xtest.reshape(N2,1,sqrtD2,sqrtD2)
-    
-    elif args.nn_type == "transformer":
-        ...
 
 
     # Dimensionality reduction (MS2)
@@ -102,7 +99,8 @@ def main(args):
         N , Ch, D, D = xtrain.shape
         model = CNN(Ch, n_classes, D) ##change 1
     elif args.nn_type == "transformer":
-        model = MyViT(None,None,None,None,None,None)
+        N , Ch, D, D = xtrain.shape
+        model = MyViT((Ch,D,D),n_patches=7,n_blocks=4,hidden_d=64,n_heads=8,out_d=n_classes)
     else:
         raise ValueError("Inputted model is not a good model")
 
