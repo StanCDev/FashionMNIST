@@ -99,6 +99,8 @@ class CNN(nn.Module):
         ### note that output dimension is nbr of out put channels / 2 ** nbr_pools
         input_size = int( D * D * in_channels / 2 ** (2 * nbr_pools) )
 
+        ##nn.Flatten()
+
 
         self.fc_layers = nn.ModuleList()
         layers = [input_size] + fc_layers + [n_classes]
