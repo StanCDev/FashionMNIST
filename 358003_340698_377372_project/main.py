@@ -85,6 +85,8 @@ def main(args):
     ## 3. Initialize the method you want to use.
     model = None
 
+    ### 3.1 RUNNING ON GPU
+
     # Neural Networks (MS2)
 
     # Prepare the model (and data) for Pytorch
