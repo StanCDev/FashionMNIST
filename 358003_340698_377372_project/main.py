@@ -7,6 +7,7 @@ from src.data import load_data
 from src.methods.pca import PCA
 from src.methods.deep_network import MLP, CNN, Trainer, MyViT
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, get_n_classes
+from src.plot import train_test_acc_param_mlp
 np.random.seed(100)
 
 
@@ -91,22 +92,23 @@ def main(args):
 
     # Prepare the model (and data) for Pytorch
     # Note: you might need to reshape the data depending on the network you use!
+    hidden_layers : list[int] = [256,128,64]
     n_classes = get_n_classes(ytrain)
     if args.nn_type == "mlp":
-        hidden_layers : list[int] = [256,128,64]
         print(f"Shape of xtrain {xtrain.shape}")
         input_size = xtrain.shape[1]
         model = MLP(input_size, n_classes, hidden_layers) ### WRITE YOUR CODE HERE
     elif args.nn_type == "cnn":
         N , Ch, D, D = xtrain.shape
-        model = CNN(Ch, n_classes, D) ##change 1
+        model = CNN(Ch, n_classes, D) ### change 1
     elif args.nn_type == "transformer":
         N , Ch, D, D = xtrain.shape
-        model = MyViT((Ch,D,D),n_patches=7,n_blocks=4,hidden_d=64,n_heads=8,out_d=n_classes)
+        model = MyViT((Ch,D,D),n_patches=7,n_blocks=8,hidden_d=64,n_heads=8,out_d=n_classes)
     else:
         raise ValueError("Inputted model is not a good model")
 
     summary(model)
+
 
     # Trainer object
     method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
@@ -128,13 +130,18 @@ def main(args):
 
     ## As there are no test dataset labels, check your model accuracy on validation dataset.
     # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
-    print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
-    acc = accuracy_fn(preds, ytest)
-    macrof1 = macrof1_fn(preds, ytest)
-    print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
+    if not args.test:
+        acc = accuracy_fn(preds, ytest)
+        macrof1 = macrof1_fn(preds, ytest)
+        print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
+    ########### Experimental stuff ###########
+    params = [5 * i for i in range(1,9)]
+    train_test_acc_param_mlp(xtrain,ytrain,xtest,ytest, input_size, n_classes , hidden_layers, params , model, args)
+
 
 
 if __name__ == '__main__':
