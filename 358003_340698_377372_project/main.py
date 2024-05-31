@@ -139,8 +139,9 @@ def main(args):
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
     ########### Experimental stuff ###########
-    params = [5 * i for i in range(1,9)]
-    train_test_acc_param_mlp(xtrain,ytrain,xtest,ytest, input_size, n_classes , hidden_layers, params , model, args)
+    if True:
+        params = [5 * i for i in range(1,7)]
+        train_test_acc_param_mlp(xtrain,ytrain,xtest,ytest, input_size, n_classes , hidden_layers, params , model, args)
 
 
 

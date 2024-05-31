@@ -14,7 +14,7 @@ class MLP(nn.Module):
     It should not use any convolutional layers.
     """
 
-    def __init__(self, input_size, n_classes, layers : list[int] = [256,128,64], dropout : bool = True):
+    def __init__(self, input_size, n_classes, layers : list[int] = [256,128,64], dropout : bool = True,p : float =0.2):
         """
         Initialize the network.
         
@@ -25,6 +25,7 @@ class MLP(nn.Module):
             input_size (int): size of the input
             n_classes (int): number of classes to predict
             layers (list): list that specifies how many hidden layers and how many neurons per hidden layer
+            p (float): ratio of dropped out weights
         """
         #super().__init__()
         assert len(layers) != 0 , "MLP has no hidden layers!"
@@ -35,7 +36,7 @@ class MLP(nn.Module):
         for i in range(len(layers) - 1):
             fc.append(nn.Linear(layers[i], layers[i+1]))
             if dropout:
-                fc.append(nn.Dropout(0.2))
+                fc.append(nn.Dropout(p))
         self.network = nn.Sequential(*fc)
 
     def forward(self, x):
@@ -64,7 +65,7 @@ class CNN(nn.Module):
     It should use at least one convolutional layer.
     """
 
-    def __init__(self, input_channels, n_classes, D, conv_layers=[(6, 3, 1),(16, 3, 1)], fc_layers=[256, 128, 64]):
+    def __init__(self, input_channels, n_classes, D = 28, conv_layers=[(6, 3, 1),(16, 3, 1)], fc_layers=[256, 128, 64]):
         """
         Initialize the network.
         
