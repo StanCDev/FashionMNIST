@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+import torch
 from torchinfo import summary
 
 from src.data import load_data
@@ -55,7 +56,6 @@ def main(args):
         ytest = ytrain_original[val_ind]
         ytrain = ytrain_original[train_ind]
 
-    ### WRITE YOUR CODE HERE to do any other data processing
     ### Here we transform matrices back to vectors in the cases of CNN and transformer
     if args.nn_type == "cnn" or args.nn_type == "transformer":
         ##print(f"Shape of xtrain before {xtrain.shape}")
@@ -86,10 +86,7 @@ def main(args):
     ## 3. Initialize the method you want to use.
     model = None
 
-    ### 3.1 RUNNING ON GPU
-
     # Neural Networks (MS2)
-
     # Prepare the model (and data) for Pytorch
     # Note: you might need to reshape the data depending on the network you use!
     hidden_layers : list[int] = [256,128,64]
@@ -97,50 +94,72 @@ def main(args):
     if args.nn_type == "mlp":
         print(f"Shape of xtrain {xtrain.shape}")
         input_size = xtrain.shape[1]
-        model = MLP(input_size, n_classes, hidden_layers) ### WRITE YOUR CODE HERE
+        model = MLP(input_size, n_classes, hidden_layers,True) ### WRITE YOUR CODE HERE
     elif args.nn_type == "cnn":
         N , Ch, D, D = xtrain.shape
         model = CNN(Ch, n_classes, D) ### change 1
     elif args.nn_type == "transformer":
         N , Ch, D, D = xtrain.shape
-        model = MyViT((Ch,D,D),n_patches=7,n_blocks=8,hidden_d=64,n_heads=8,out_d=n_classes)
+        ## change nbr blocks to 8
+        model = MyViT((Ch,D,D),n_patches=7,n_blocks=1,hidden_d=64,n_heads=8,out_d=n_classes)
     else:
         raise ValueError("Inputted model is not a good model")
 
     summary(model)
 
 
-    # Trainer object
-    method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
+    ######################## SELECTING DEVICE ########################
+    device = torch.device("cpu")
+    if args.device == "cuda":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            print("cuda not available on this device")
+    elif args.device == "mps":
+        if torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            print("mps not available on this device")
+
+    model.to(device)
+
+    ######################## COMMENTING STARTS HERE ########################
+    # # Trainer object
+    # method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
 
 
-    ## 4. Train and evaluate the method
+    # ## 4. Train and evaluate the method
 
-    # Fit (:=train) the method on the training data
-    preds_train = method_obj.fit(xtrain, ytrain)
+    # # Fit (:=train) the method on the training data
+    # preds_train = method_obj.fit(xtrain, ytrain)
 
-    # Predict on unseen data
-    preds = method_obj.predict(xtest)
+    # # Predict on unseen data
+    # preds = method_obj.predict(xtest)
 
-    ## Report results: performance on train and valid/test sets
-    acc = accuracy_fn(preds_train, ytrain)
-    macrof1 = macrof1_fn(preds_train, ytrain)
-    print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
-
-
-    ## As there are no test dataset labels, check your model accuracy on validation dataset.
-    # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
-    #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
-    if not args.test:
-        acc = accuracy_fn(preds, ytest)
-        macrof1 = macrof1_fn(preds, ytest)
-        print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # ## Report results: performance on train and valid/test sets
+    # acc = accuracy_fn(preds_train, ytrain)
+    # macrof1 = macrof1_fn(preds_train, ytrain)
+    # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
 
+    # ## As there are no test dataset labels, check your model accuracy on validation dataset.
+    # # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
+    # #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
+    # if not args.test:
+    #     acc = accuracy_fn(preds, ytest)
+    #     macrof1 = macrof1_fn(preds, ytest)
+    #     print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+
+    ######################## COMMENTING ENDS HERE ########################
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
     ########### Experimental stuff ###########
     if True:
-        params = [5 * i for i in range(1,7)]
+        params = []
+        if args.nn_type == "mlp":
+            params = [5 * i for i in range(1,11)]
+        elif args.nn_type == "transformer":
+            params = list(range(1,10+1))
+        input_size = xtrain.shape[1]
         train_test_acc_param_mlp(xtrain,ytrain,xtest,ytest, input_size, n_classes , hidden_layers, params , model, args)
 
 

@@ -35,6 +35,7 @@ class MLP(nn.Module):
         layers = [input_size] + layers + [n_classes]
         for i in range(len(layers) - 1):
             fc.append(nn.Linear(layers[i], layers[i+1]))
+            fc.append(nn.ReLU())
             if dropout:
                 fc.append(nn.Dropout(p))
         self.network = nn.Sequential(*fc)
@@ -50,11 +51,12 @@ class MLP(nn.Module):
                 Reminder: logits are value pre-softmax.
         """
         preds = x
-        for i, fc in enumerate(self.network):
-            if i == len(self.network)-1:
-                preds = fc(preds)
-            else:
-                preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
+        # for i, fc in enumerate(self.network):
+        #     if i == len(self.network)-1:
+        #         preds = fc(preds)
+        #     else:
+        #         preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
+        preds = self.network(x)
         return preds
 
 
