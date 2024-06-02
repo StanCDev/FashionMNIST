@@ -51,11 +51,6 @@ class MLP(nn.Module):
                 Reminder: logits are value pre-softmax.
         """
         preds = x
-        # for i, fc in enumerate(self.network):
-        #     if i == len(self.network)-1:
-        #         preds = fc(preds)
-        #     else:
-        #         preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
         preds = self.network(x)
         return preds
 
@@ -67,7 +62,7 @@ class CNN(nn.Module):
     It should use at least one convolutional layer.
     """
 
-    def __init__(self, input_channels, n_classes, D = 28, conv_layers=[(6, 3, 1),(16, 3, 1)], fc_layers=[256, 128, 64]):
+    def __init__(self, input_channels, n_classes, D = 28, conv_layers=[(6, 5, 2),(16, 3, 1)], fc_layers=[256, 128, 64]):
         """
         Initialize the network.
         
@@ -80,7 +75,7 @@ class CNN(nn.Module):
             D (int): width / height of square image
             conv_layers (list[(int,int,int)]): list of triples (out_channels, kernel_size, and padding) for every 
                 convolutional layer. For every conv. there is one max pooling
-                Note that padding should be equal to (kernel size - 1) / 2
+                Note that padding should be equal to (kernel size - 1) / 2 where kernel size is odd
             fc_layers (list[int]): list of neurons for every hidden layer
         """
         super(CNN, self).__init__()
@@ -103,8 +98,6 @@ class CNN(nn.Module):
 
         ### note that output dimension is nbr of out put channels / 2 ** nbr_pools
         input_size = int( D * D * in_channels / 2 ** (2 * nbr_pools) )
-
-        ##nn.Flatten()
 
 
         self.fc_layers = nn.ModuleList()
@@ -133,7 +126,7 @@ class CNN(nn.Module):
             if i == len(self.fc_layers)-1:
                 preds = fc(preds)
             else:
-                preds = F.relu(fc(preds)) #not sure about the shape, what about softmax??
+                preds = F.relu(fc(preds))
         return preds
 
 
@@ -237,14 +230,6 @@ class MyViT(nn.Module):
         )
 
 
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
-        
-    
-    
     def forward(self, x):
         """
         Predict the class of a batch of samples with the model.
@@ -289,7 +274,7 @@ class Trainer(object):
     It will also serve as an interface between numpy and pytorch.
     """
 
-    def __init__(self, model, lr, epochs, batch_size):
+    def __init__(self, model, lr, epochs, batch_size,device =torch.device("cpu")):
         """
         Initialize the trainer object for a given model.
 
@@ -305,7 +290,8 @@ class Trainer(object):
         self.batch_size = batch_size
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(model.parameters(), lr)  ### WRITE YOUR CODE HERE
+        self.optimizer = torch.optim.SGD(model.parameters(), lr)
+        self.device = device
 
     def train_all(self, dataloader):
         """
@@ -320,7 +306,6 @@ class Trainer(object):
         epochs = range(self.epochs)
         for ep in epochs:
             self.train_one_epoch(dataloader,ep, len(epochs))
-            ### WRITE YOUR CODE HERE if you want to do add something else at each epoch
             print("")
 
     def train_one_epoch(self, dataloader, ep, epochs):
@@ -337,6 +322,8 @@ class Trainer(object):
         for it, batch in enumerate(dataloader):
             # 5.1 Load a batch, break it down in images and targets.
             x, y = batch
+            x = x.to(self.device)
+            y = y.to(self.device)
             y = y.long()
             # 5.2 Run forward pass.
             logits = self.model.forward(x)  ### WRITE YOUR CODE HERE
@@ -379,6 +366,7 @@ class Trainer(object):
         with torch.no_grad():
             for it, x in enumerate(dataloader):
                 x = x[0]
+                x = x.to(self.device)
                 y = self.model(x)
                 pred_labels.append(torch.argmax(y, dim=1)) # or just y
         return torch.cat(pred_labels)

@@ -152,4 +152,5 @@ def get_positional_embeddings(sequence_length, d):
     for i in range(sequence_length):
         for j in range(d):
             result[i][j] = np.sin(i / (10000 ** (j / d))) if j % 2 == 0 else np.cos(i / (10000 ** ((j - 1) / d)))
+    ##result = result.clone().detach().to(device=device)
     return result

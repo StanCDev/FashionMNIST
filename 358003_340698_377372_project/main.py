@@ -83,6 +83,23 @@ def main(args):
         xtest = pca_obj.reduce_dimension(xtest)
 
 
+
+    ######################## SELECTING DEVICE ########################
+    device = torch.device("cpu")
+    if args.nn_type == "transformer":
+        device = torch.device("cpu")
+    elif args.device == "cuda":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            print("cuda not available on this device")
+    elif args.device == "mps":
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            device = torch.device("mps")
+        else:
+            print("mps not available on this device")
+
+
     ## 3. Initialize the method you want to use.
     model = None
 
@@ -101,31 +118,16 @@ def main(args):
     elif args.nn_type == "transformer":
         N , Ch, D, D = xtrain.shape
         ## change nbr blocks to 8
-        model = MyViT((Ch,D,D),n_patches=7,n_blocks=1,hidden_d=64,n_heads=8,out_d=n_classes)
+        model = MyViT((Ch,D,D),n_patches=7,n_blocks=1,hidden_d=64,n_heads=8,out_d=n_classes,device=device)
     else:
         raise ValueError("Inputted model is not a good model")
 
     summary(model)
 
-
-    ######################## SELECTING DEVICE ########################
-    device = torch.device("cpu")
-    if args.device == "cuda":
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        else:
-            print("cuda not available on this device")
-    elif args.device == "mps":
-        if torch.backends.mps.is_available():
-            device = torch.device("mps")
-        else:
-            print("mps not available on this device")
-
     model.to(device)
 
-    ######################## COMMENTING STARTS HERE ########################
     # Trainer object
-    method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
+    method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size,device=device)
 
 
     ## 4. Train and evaluate the method
@@ -150,17 +152,7 @@ def main(args):
         macrof1 = macrof1_fn(preds, ytest)
         print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-    ######################## COMMENTING ENDS HERE ########################
-    ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
-    ########### Experimental stuff ###########
-    if False:
-        params = []
-        if args.nn_type == "mlp":
-            params = [5 * i for i in range(1,11)]
-        elif args.nn_type == "transformer":
-            params = list(range(1,10+1))
-        input_size = xtrain.shape[1]
-        train_test_acc_param_mlp(xtrain,ytrain,xtest,ytest, input_size, n_classes , hidden_layers, params , model, args)
+    np.save("predictions", preds)
 
 
 
