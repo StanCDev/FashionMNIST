@@ -110,7 +110,6 @@ class CNN(nn.Module):
         self.fc_layers = nn.ModuleList()
         layers = [input_size] + fc_layers + [n_classes]
         for i in range(len(layers) - 1):
-            print(f"And the two layers are : {layers[i]} {layers[i+1]}")
             self.fc_layers.append(nn.Linear(layers[i], layers[i+1]))
 
     def forward(self, x):

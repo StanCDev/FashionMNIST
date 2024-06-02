@@ -124,36 +124,36 @@ def main(args):
     model.to(device)
 
     ######################## COMMENTING STARTS HERE ########################
-    # # Trainer object
-    # method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
+    # Trainer object
+    method_obj = Trainer(model, lr=args.lr, epochs=args.max_iters, batch_size=args.nn_batch_size)
 
 
-    # ## 4. Train and evaluate the method
+    ## 4. Train and evaluate the method
 
-    # # Fit (:=train) the method on the training data
-    # preds_train = method_obj.fit(xtrain, ytrain)
+    # Fit (:=train) the method on the training data
+    preds_train = method_obj.fit(xtrain, ytrain)
 
-    # # Predict on unseen data
-    # preds = method_obj.predict(xtest)
+    # Predict on unseen data
+    preds = method_obj.predict(xtest)
 
-    # ## Report results: performance on train and valid/test sets
-    # acc = accuracy_fn(preds_train, ytrain)
-    # macrof1 = macrof1_fn(preds_train, ytrain)
-    # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    ## Report results: performance on train and valid/test sets
+    acc = accuracy_fn(preds_train, ytrain)
+    macrof1 = macrof1_fn(preds_train, ytrain)
+    print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
 
-    # ## As there are no test dataset labels, check your model accuracy on validation dataset.
-    # # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
-    # #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
-    # if not args.test:
-    #     acc = accuracy_fn(preds, ytest)
-    #     macrof1 = macrof1_fn(preds, ytest)
-    #     print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    ## As there are no test dataset labels, check your model accuracy on validation dataset.
+    # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
+    #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
+    if not args.test:
+        acc = accuracy_fn(preds, ytest)
+        macrof1 = macrof1_fn(preds, ytest)
+        print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     ######################## COMMENTING ENDS HERE ########################
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
     ########### Experimental stuff ###########
-    if True:
+    if False:
         params = []
         if args.nn_type == "mlp":
             params = [5 * i for i in range(1,11)]
