@@ -6,7 +6,7 @@ from torchinfo import summary
 
 from src.data import load_data
 from src.methods.pca import PCA
-from src.methods.deep_network import MLP, CNN, Trainer, MyViT
+from src.methods.deep_network import MLP, CNN, Trainer, MyViT, CustomResidualCnn
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, get_n_classes
 from src.plot import train_test_acc_param_mlp
 np.random.seed(100)
@@ -57,7 +57,7 @@ def main(args):
         ytrain = ytrain_original[train_ind]
 
     ### Here we transform matrices back to vectors in the cases of CNN and transformer
-    if args.nn_type == "cnn" or args.nn_type == "transformer":
+    if args.nn_type == "cnn" or args.nn_type == "transformer" or args.nn_type == "res":
         ##print(f"Shape of xtrain before {xtrain.shape}")
         N , D = xtrain.shape
         sqrtD = int(np.sqrt(D))
@@ -119,6 +119,8 @@ def main(args):
         N , Ch, D, D = xtrain.shape
         ## change nbr blocks to 8
         model = MyViT((Ch,D,D),n_patches=7,n_blocks=1,hidden_d=64,n_heads=8,out_d=n_classes,device=device)
+    elif args.nn_type == "res":
+        model = CustomResidualCnn(classes_num=n_classes)
     else:
         raise ValueError("Inputted model is not a good model")
 
@@ -165,7 +167,7 @@ if __name__ == '__main__':
     # MS2 arguments
     parser.add_argument('--data', default="dataset", type=str, help="path to your dataset")
     parser.add_argument('--nn_type', default="mlp",
-                        help="which network architecture to use, it can be 'mlp' | 'transformer' | 'cnn'")
+                        help="which network architecture to use, it can be 'mlp' | 'transformer' | 'cnn' | 'res'")
     parser.add_argument('--nn_batch_size', type=int, default=64, help="batch size for NN training")
     parser.add_argument('--device', type=str, default="cpu",
                         help="Device to use for the training, it can be 'cpu' | 'cuda' | 'mps'")
