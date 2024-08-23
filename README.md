@@ -39,4 +39,4 @@ The script accepts several command-line arguments for configuring the training p
 
 ## Report
 
-We wrote a report explaining our [results and experiments](report.pdf).
+We wrote a report explaining our [results and experiments](FashionMNIST/report.pdf).
