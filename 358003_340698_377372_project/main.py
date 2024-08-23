@@ -103,15 +103,12 @@ def main(args):
     ## 3. Initialize the method you want to use.
     model = None
 
-    # Neural Networks (MS2)
-    # Prepare the model (and data) for Pytorch
-    # Note: you might need to reshape the data depending on the network you use!
     hidden_layers : list[int] = [256,128,64]
     n_classes = get_n_classes(ytrain)
     if args.nn_type == "mlp":
         print(f"Shape of xtrain {xtrain.shape}")
         input_size = xtrain.shape[1]
-        model = MLP(input_size, n_classes, hidden_layers,True) ### WRITE YOUR CODE HERE
+        model = MLP(input_size, n_classes, hidden_layers,False) ### WRITE YOUR CODE HERE
     elif args.nn_type == "cnn":
         N , Ch, D, D = xtrain.shape
         model = CNN(Ch, n_classes, D) ### change 1
@@ -122,7 +119,11 @@ def main(args):
     elif args.nn_type == "res":
         model = CustomResidualCnn(classes_num=n_classes)
     else:
-        raise ValueError("Inputted model is not a good model")
+        raise ValueError("Inputted model is not a valid model")
+
+    if args.load != "NONE":
+        model.load_state_dict(torch.load(args.load))
+        model.train()
 
     summary(model)
 
@@ -145,26 +146,21 @@ def main(args):
     macrof1 = macrof1_fn(preds_train, ytrain)
     print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-
-    ## As there are no test dataset labels, check your model accuracy on validation dataset.
-    # You can check your model performance on test set by submitting your test set predictions on the AIcrowd competition.
-    #print(f"Shape of preds = {preds.shape} vs shape of xtest = {xtest.shape}")
     if not args.test:
         acc = accuracy_fn(preds, ytest)
         macrof1 = macrof1_fn(preds, ytest)
         print(f"Validation set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
+    ### Saving stuff
+    if args.save != "NONE":
+        torch.save(model.state_dict(), args.save)
     np.save("predictions", preds)
 
 
 
 if __name__ == '__main__':
-    # Definition of the arguments that can be given through the command line (terminal).
-    # If an argument is not given, it will take its default value as defined below.
     parser = argparse.ArgumentParser()
-    # Feel free to add more arguments here if you need!
 
-    # MS2 arguments
     parser.add_argument('--data', default="dataset", type=str, help="path to your dataset")
     parser.add_argument('--nn_type', default="mlp",
                         help="which network architecture to use, it can be 'mlp' | 'transformer' | 'cnn' | 'res'")
@@ -174,14 +170,15 @@ if __name__ == '__main__':
     parser.add_argument('--use_pca', action="store_true", help="use PCA for feature reduction")
     parser.add_argument('--pca_d', type=int, default=100, help="the number of principal components")
 
+    ### Pytorch saving / loading models
+    parser.add_argument('--save', default="NONE", type=str, help="path where you want to save your model")
+    parser.add_argument('--load', default="NONE", type=str, help="path where you want to load your model")
+
 
     parser.add_argument('--lr', type=float, default=1e-5, help="learning rate for methods with learning rate")
     parser.add_argument('--max_iters', type=int, default=100, help="max iters for methods which are iterative")
     parser.add_argument('--test', action="store_true",
                         help="train on whole training data and evaluate on the test data, otherwise use a validation set")
 
-
-    # "args" will keep in memory the arguments and their values,
-    # which can be accessed as "args.data", for example.
     args = parser.parse_args()
     main(args)

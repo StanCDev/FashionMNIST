@@ -35,7 +35,8 @@ class MLP(nn.Module):
         layers = [input_size] + layers + [n_classes]
         for i in range(len(layers) - 1):
             fc.append(nn.Linear(layers[i], layers[i+1]))
-            fc.append(nn.ReLU())
+            if i != len(layers) - 2:
+                fc.append(nn.ReLU())
             if dropout:
                 fc.append(nn.Dropout(p))
         self.network = nn.Sequential(*fc)
@@ -183,7 +184,7 @@ class ResidualBlock(nn.Module):
 
 
 class CustomResidualCnn(nn.Module):
-    def __init__(self, classes_num: int, in_channels: int = 1, image_size: tuple = (28, 28)):
+    def __init__(self, classes_num: int, in_channels: int = 1):
         super().__init__()
 
         # Initial convolution layer
@@ -225,21 +226,17 @@ class CustomResidualCnn(nn.Module):
         self.layer4 = nn.Sequential(
             ResidualBlock(64, 128),
             ResidualBlock(128, 128),
-            ResidualBlock(128, 128)#,
-            #nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
+            ResidualBlock(128, 128),
+            nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         )
+
+        
         
         #Flattening and final linear layer
         self.flatten = nn.Flatten(1)
         self.dropout = nn.Dropout(p=0.2)
-        self.linear1 = nn.Linear(
-            in_features=1152,
-            out_features=128
-        )
-        self.linear2 = nn.Linear(
-            in_features=128,
-            out_features=classes_num
-        )
+
+        self.mlp = MLP(input_size=128,n_classes=classes_num, layers=[64], dropout=False)
 
     def forward(self, x):
         x = self.conv(x)
@@ -254,8 +251,7 @@ class CustomResidualCnn(nn.Module):
         x = self.flatten(x)
         x = self.dropout(x)
 
-        x = self.linear1(x)
-        x = self.linear2(x)
+        x = self.mlp(x)
 
         return x
 
@@ -419,7 +415,8 @@ class Trainer(object):
         self.batch_size = batch_size
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(model.parameters(), lr)
+        #self.optimizer = torch.optim.SGD(model.parameters(), lr, momentum=0.9,weight_decay=1e-4)
+        self.optimizer = torch.optim.Adam(model.parameters(), lr,weight_decay=5*1e-3)
         self.device = device
 
     def train_all(self, dataloader):
