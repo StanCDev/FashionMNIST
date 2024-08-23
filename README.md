@@ -7,7 +7,7 @@ Start off by cloning the repo, and run the following to train a simple MLP.
 The required packages are [pytorch](https://pytorch.org/), [torchinfo](https://pypi.org/project/torchinfo/) and [numpy](https://numpy.org/).
 
 ```bash
-cd 358003_340698_377372_project
+cd FashionMNIST
 python --data <Path_to_FMNIST_dataset>
 ```
 
