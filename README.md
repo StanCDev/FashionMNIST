@@ -40,3 +40,9 @@ The script accepts several command-line arguments for configuring the training p
 ## Report
 
 We wrote a report explaining our [results and experiments](FashionMNIST/report.pdf).
+
+## Contributors
+
+[@StanCDev](https://github.com/StanCDev)
+[@alicecnm](https://github.com/alicecnm)
+[@CyrillStrassburg](https://github.com/CyrillStrassburg)
